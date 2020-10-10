@@ -51,26 +51,25 @@ var archiveLog = async function () {
 
   oldComps.forEach(async (comp) => {
     comp.status = "archived";
-    comp.participants.forEach(p => {
+    comp.participants.forEach(async (p) => {
       var user = await User.findOne({
-        hashcode: p.user_code
+        hashcode: p.user_code,
       });
       var participanting_comps = user.participanting_comps;
-      var compIndex = participanting_comps.findIndex(uc => uc === comp.code);
+      var compIndex = participanting_comps.findIndex((uc) => uc === comp.code);
       participanting_comps = participanting_comps.splice(compIndex, 1);
       user.participanting_comps = participanting_comps;
 
       var hosting_comps = user.hosting_comps;
-      compIndex = hosting_comps.findIndex(uc => uc === comp.code);
+      compIndex = hosting_comps.findIndex((uc) => uc === comp.code);
       hosting_comps = hosting_comps.splice(compIndex, 1);
       user.hosting_comps = hosting_comps;
 
       await user.save();
-    })
+    });
     await comp.save();
   });
 
-  
   // Finish competitions which passes the deadline
   var finishedComps = onGoingComps.filter((comp) => {
     var date = new Date(comp.end_time);
