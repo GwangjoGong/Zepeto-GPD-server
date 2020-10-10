@@ -13,9 +13,14 @@
     "mongodb": "^3.6.2",
     "mongoose": "^5.10.9",
     "morgan": "^1.10.0",
+    "node-cron": "^2.0.3",
     "random-key": "^0.3.2"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
+  },
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
   }
 }

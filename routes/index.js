@@ -12,6 +12,13 @@ module.exports = function (app, Competition, Log, User) {
       comp.capacity = req.body.capacity;
       comp.category = req.body.category;
 
+      var now = new Date();
+      now.setHours(now.getHours() + 1);
+      comp.end_time = now;
+
+      now.setHours(now.getHours() + 1);
+      comp.archive_time = now;
+
       await comp.save();
     } catch (err) {
       console.log(err.message);
@@ -69,7 +76,8 @@ module.exports = function (app, Competition, Log, User) {
     }
 
     var participantData = {
-      user_code: req.body.user_code,
+      user_code: user.hashcode,
+      user_nickname: user.nickname,
       user_image: req.body.user_image,
       votes: 0,
     };
@@ -81,6 +89,23 @@ module.exports = function (app, Competition, Log, User) {
 
     await comp.save();
     await user.save();
+
+    // Create a participant log
+    var log = new Log();
+    log.user_code = user.hashcode;
+    log.user_nickname = user.nickname;
+    log.type = req.body.type;
+    if (req.body.type === "voted") {
+      log.votee_code = req.body.votee_code;
+    }
+
+    log.comp_code = comp.code;
+    log.comp_name = comp.name;
+
+    await log.save();
+    res.json({
+      result: 1,
+    });
 
     return res.json({
       result: 1,
@@ -124,12 +149,6 @@ module.exports = function (app, Competition, Log, User) {
       log.votee_code = req.body.votee_code;
       log.comp_code = comp.code;
       log.comp_name = comp.name;
-
-      var now = new Date();
-      now.setHours(now.getHours() + 1);
-
-      log.end_time = now;
-
       await log.save();
     }
 
@@ -196,55 +215,6 @@ module.exports = function (app, Competition, Log, User) {
   });
 
   // Log API
-  // Create a log
-  app.post("/api/create_log", async function (req, res) {
-    var log = new Log();
-    log.user_code = req.body.user_code;
-    log.type = req.body.type;
-    if (req.body.type === "voted") {
-      log.votee_code = req.body.votee_code;
-    }
-
-    log.comp_code = req.body.comp_code;
-
-    var targetComp = await Competition.findOne({
-      code: req.body.comp_code,
-    });
-
-    if (!targetComp) {
-      return res.json({
-        result: 0,
-        message: "Competition not found.",
-      });
-    }
-
-    log.comp_name = targetComp.name;
-
-    var now = new Date();
-    now.setHours(now.getHours() + 1);
-
-    log.end_time = now;
-
-    await log.save();
-    res.json({
-      result: 1,
-    });
-  });
-
-  // app.post("/api/archive_log", async function (req, res) {
-  //   var log = await Log.findOne({
-  //     _id: req.body.id,
-  //   });
-
-  //   if (!log)
-  //     return res.json({
-  //       result: 0,
-  //       message: "Log not found.",
-  //     });
-
-  //   log.is_done = true;
-  // });
-
   // Get user's log
   app.post("/api/user_logs", async function (req, res) {
     var logs = await Log.find({ user_code: req.body.user_code });
