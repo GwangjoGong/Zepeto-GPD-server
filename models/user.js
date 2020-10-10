@@ -9,6 +9,7 @@ var userSchema = new Schema({
   medal_num_3r: { type: Number, default: 0 },
   medal_num_vote: { type: Number, default: 0 },
   medal_num_win: { type: Number, default: 0 },
+  participating_comps: { type: Array, default: [] },
 });
 
 module.exports = mongoose.model("User", userSchema);

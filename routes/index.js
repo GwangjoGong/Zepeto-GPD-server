@@ -51,6 +51,93 @@ module.exports = function (app, Competition, Log, User) {
     );
   });
 
+  // Participate a competition
+  app.post("/api/participate_comp", async function (req, res) {
+    var comp = await Competition.findOne({
+      code: req.body.comp_code,
+    });
+
+    var user = await User.findOne({
+      hashcode: req.body.user_code,
+    });
+
+    if (!comp || !user) {
+      return res.json({
+        result: 0,
+        message: "not found",
+      });
+    }
+
+    var participantData = {
+      user_code: req.body.user_code,
+      user_image: req.body.user_image,
+      votes: 0,
+    };
+
+    comp.participants = [...participantData];
+    comp.num_participants = comp.participants.length;
+
+    user.participating_comps = [...comp.code];
+
+    await comp.save();
+    await user.save();
+
+    return res.json({
+      result: 1,
+    });
+  });
+
+  // Vote at a competition
+  app.post("/api/vote", async function (req, res) {
+    var comp = await Competition.findOne({
+      code: req.body.comp_code,
+    });
+
+    if (!comp)
+      return res.json({
+        result: 0,
+        message: "not found",
+      });
+
+    //Update Score
+    var participants = comp.participants;
+    var voteeIndex = participants.findIndex(
+      (user) => user.user_code === req.body.votee_code
+    );
+
+    if (voteeIndex === -1) {
+      return res.json({
+        result: 0,
+        message: "not found",
+      });
+    }
+
+    participants[voteeIndex]++;
+    comp.participants = participants;
+    await comp.save();
+
+    //Create a vote log if final
+    if (req.body.is_final) {
+      var log = new Log();
+      log.user_code = req.body.user_code;
+      log.type = "voted";
+      log.votee_code = req.body.votee_code;
+      log.comp_code = comp.code;
+      log.comp_name = comp.name;
+
+      var now = new Date();
+      now.setHours(now.getHours() + 1);
+
+      log.end_time = now;
+
+      await log.save();
+    }
+
+    return res.json({
+      result: 1,
+    });
+  });
+
   // Get a competition of vote
   app.get("/api/competition/:code", async function (req, res) {
     var comp_code = req.params.code;

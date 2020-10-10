@@ -7,6 +7,7 @@ var logSchema = new Schema({
   votee_code: { type: String },
   votee_rank: { type: Number },
   winner_img: { type: String },
+  participant_rank: { type: Number },
   comp_code: { type: String, required: true },
   comp_name: { type: String, required: true },
   is_done: { type: Boolean, default: false },
