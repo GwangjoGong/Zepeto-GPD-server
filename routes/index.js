@@ -5,6 +5,10 @@ module.exports = function (app, Competition, Log, User) {
   // Create a competition
   app.post("/api/create_comp", async function (req, res) {
     try {
+      var user = await User.findOne({
+        hashcode: req.body.user_code,
+      });
+
       var comp = new Competition();
       comp.code = rand.generate(7);
       comp.name = req.body.name;
@@ -20,6 +24,9 @@ module.exports = function (app, Competition, Log, User) {
       comp.archive_time = now;
 
       await comp.save();
+
+      user.hosting_comps = [...comp.code];
+      await user.save();
     } catch (err) {
       console.log(err.message);
       return res.json({
@@ -106,6 +113,20 @@ module.exports = function (app, Competition, Log, User) {
     res.json({
       result: 1,
     });
+
+    return res.json({
+      result: 1,
+    });
+  });
+
+  // Start the competition
+  app.post("/api/start_comp", async function (req, res) {
+    var comp = await Competition.findOne({
+      code: req.body.comp_code,
+    });
+
+    comp.status === "voting";
+    await comp.save();
 
     return res.json({
       result: 1,
