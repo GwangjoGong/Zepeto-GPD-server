@@ -42,12 +42,19 @@ var archiveLog = async function () {
 
   var now = new Date();
 
+  console.log(now.toISOString());
+
   // Archive old competitions
   var archivableComps = await Competition.find({ status: "finished" });
-  var oldComps = archivableComps.filter((comp) => {
+
+  var oldComps = [];
+  for (var comp of archivableComps) {
+    var now = new Date();
     var date = new Date(comp.archive_time);
-    return date >= now;
-  });
+    if (date <= now) {
+      oldComps.push(comp);
+    }
+  }
 
   oldComps.forEach(async (comp) => {
     comp.status = "archived";
@@ -57,23 +64,32 @@ var archiveLog = async function () {
       });
       var participanting_comps = user.participanting_comps;
       var compIndex = participanting_comps.findIndex((uc) => uc === comp.code);
-      participanting_comps = participanting_comps.splice(compIndex, 1);
+      participanting_comps.splice(compIndex, 1);
       user.participanting_comps = participanting_comps;
-
-      var hosting_comps = user.hosting_comps;
-      compIndex = hosting_comps.findIndex((uc) => uc === comp.code);
-      hosting_comps = hosting_comps.splice(compIndex, 1);
-      user.hosting_comps = hosting_comps;
 
       await user.save();
     });
+
+    var hoster = await User.findOne({
+      hashcode: comp.hoster_code,
+    });
+
+    var compIndex = hoster.hosting_comps.findIndex((c) => c === comp.code);
+    var hosting_comps = hoster.hosting_comps;
+
+    hosting_comps.splice(compIndex, 1);
+
+    hoster.hosting_comps = hosting_comps;
+
+    await hoster.save();
     await comp.save();
   });
 
   // Finish competitions which passes the deadline
   var finishedComps = onGoingComps.filter((comp) => {
+    var now = new Date();
     var date = new Date(comp.end_time);
-    return date >= now;
+    return date <= now;
   });
 
   for (var comp of finishedComps) {

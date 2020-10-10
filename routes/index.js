@@ -10,22 +10,29 @@ module.exports = function (app, Competition, Log, User) {
       });
 
       var comp = new Competition();
+      comp.hoster_code = req.body.user_code;
       comp.code = rand.generate(7);
       comp.name = req.body.name;
       comp.cover_image = req.body.cover_image;
       comp.capacity = req.body.capacity;
-      comp.category = req.body.category;
+      comp.theme = req.body.theme;
+
+      if (req.body.booth_fixed) {
+        comp.booth_fixed = req.body.booth_fixed;
+        comp.booth = req.body.booth;
+      }
 
       var now = new Date();
-      now.setHours(now.getHours() + 1);
-      comp.end_time = now;
+      now.setHours(now.getHours() + 10000);
+      comp.end_time = now.toISOString();
 
-      now.setHours(now.getHours() + 1);
-      comp.archive_time = now;
+      now.setHours(now.getHours() + 10000);
+      comp.archive_time = now.toISOString();
 
       await comp.save();
 
-      user.hosting_comps = [...comp.code];
+      user.hosting_comps.push(comp.code);
+
       await user.save();
     } catch (err) {
       console.log(err.message);
@@ -43,9 +50,7 @@ module.exports = function (app, Competition, Log, User) {
   //Get ongoing competition list
   app.get("/api/comp_list", function (req, res) {
     Competition.find(
-      {
-        status: "ongoing",
-      },
+      {},
       {
         participants: 0,
       },
@@ -59,7 +64,9 @@ module.exports = function (app, Competition, Log, User) {
 
         return res.json({
           result: 1,
-          comps,
+          comps: comps.filter(
+            (comp) => comp.status === "ongoing" || comp.status === "voting"
+          ),
         });
       }
     );
@@ -89,10 +96,10 @@ module.exports = function (app, Competition, Log, User) {
       votes: 0,
     };
 
-    comp.participants = [...participantData];
+    comp.participants.push(participantData);
     comp.num_participants = comp.participants.length;
 
-    user.participating_comps = [...comp.code];
+    user.participating_comps.push(comp.code);
 
     await comp.save();
     await user.save();
@@ -222,6 +229,17 @@ module.exports = function (app, Competition, Log, User) {
       }
 
       return res.json({ result: 1 });
+    });
+  });
+
+  app.post("/api/user_profile", async function (req, res) {
+    var user = await User.findOne({
+      hashcode: req.body.user_code,
+    });
+
+    return res.json({
+      result: 1,
+      user,
     });
   });
 
