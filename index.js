@@ -27,6 +27,7 @@ mongoose.connect("mongodb://localhost:27017/zepeto-gpd");
 var Competition = require("./models/competition");
 var Log = require("./models/log");
 var User = require("./models/user");
+var router = require("./routes")(app, Competition, Log, User);
 
 var server = app.listen(PORT, function () {
   console.log("Express server running on port " + PORT);

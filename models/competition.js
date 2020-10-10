@@ -8,13 +8,8 @@ var competitionSchema = new Schema({
   capacity: { type: Number, required: true },
   category: { type: String, required: true },
   status: { type: String, required: true, default: "ongoing" },
-  num_participants: { type: Number, default: 1 },
-  participants: [
-    {
-      type: Schema.ObjectId,
-      ref: "User",
-    },
-  ],
+  num_participants: { type: Number, default: 0 },
+  participants: { type: Array, default: [] },
 });
 
 module.exports = mongoose.model("Competition", competitionSchema);
